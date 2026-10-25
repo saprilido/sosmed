@@ -1,6 +1,6 @@
 # SOCMED INSIGHT
 
-Dashboard analitik media sosial (Instagram) untuk YMD: satu file HTML, tanpa server, tanpa instalasi.
+Dashboard analitik media sosial (Instagram): satu file HTML, tanpa server, tanpa instalasi.
 Data CSV/XLSX diolah penuh **offline** di browser. Tidak ada data yang dikirim ke server mana pun,
 kecuali jika Anda sendiri memakai API key Gemini untuk membaca gambar/PDF.
 
@@ -28,14 +28,6 @@ Kolom kiri = periode aktif, kolom kanan = "Bandingkan dengan".
 Hanya diperlukan untuk membaca screenshot/PDF. Klik **API Key Gemini** di sidebar untuk membuka kolomnya.
 - Key hanya disimpan di browser Anda, dan hanya jika kotak **Ingat key** dicentang.
 - Untuk menghapus: klik **Hapus key** (menghapus dari kolom dan dari penyimpanan browser).
-- Jangan pernah menaruh key di file di repo ini.
-
-## Publikasi lewat GitHub Pages
-1. Upload semua file di repo ini ke branch `main`.
-2. Settings → Pages → Source: **Deploy from a branch**, Branch: `main`, folder `/ (root)`, lalu Save.
-3. Tunggu 1–2 menit; alamat situs tampil di halaman Pages.
-
-Repo publik berarti `index.html` dan contoh data terbuka untuk umum. Jangan upload data asli akun.
 
 ## Struktur
 ```
