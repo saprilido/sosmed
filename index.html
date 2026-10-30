@@ -123,6 +123,7 @@ select, input[type=text], input[type=date] { background: var(--surface); border:
 .row2 { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 .rowc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.rowc.one { grid-template-columns: minmax(0, 1fr); }
 .find { background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 18px; min-width: 0; box-shadow: 0 2px 12px rgba(194,24,91,0.2); overflow-wrap: anywhere; }
 @container (max-width: 800px) { .row2, .rowc { grid-template-columns: minmax(0, 1fr); } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 720px) { .row3 { grid-template-columns: minmax(0, 1fr); } }
@@ -317,6 +318,7 @@ tfoot td { font-weight: 800; background: var(--accent-soft); border-bottom: 0; }
 .pdf-slide .pdf-body:has(> .kpis) { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; align-content: start; }
 .pdf-slide .pdf-body:has(> .kpis) > .kpis { grid-column: 1 / -1; }
 .pdf-slide .pdf-body:has(> .kpis) > .rowc { display: contents !important; }
+.pdf-slide .pdf-body:has(> .kpis) > .rowc > .card { grid-column: span 2; }
 .pdf-slide .pdf-body .recs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; }
 .pdf-slide .pdf-body [style*="padding:10px; border-bottom"] { padding: 3px 8px !important; }
 .pdf-slide .pdf-body [style*="-webkit-line-clamp:2"] { -webkit-line-clamp: 1 !important; }
@@ -342,6 +344,32 @@ tfoot td { font-weight: 800; background: var(--accent-soft); border-bottom: 0; }
 .pdf-slide.pdf-grafik .dl { gap: 3px !important; font-size: 10.5px !important; line-height: 1.2 !important; }
 .pdf-slide.pdf-grafik .comp-list .note { line-height: 1.2 !important; }
 .pdf-slide .pdf-body .trow { padding: 1px 8px !important; }
+.pdf-slide .pdf-body .rec { gap: 5px !important; }
+.pdf-slide .pdf-body .rec .why { padding-top: 5px !important; }
+
+.pdf-slide .dur-note { display: none !important; }
+.pdf-slide .pdf-body .kpi { padding: 9px 12px !important; }
+.pdf-slide .pdf-body .kpis { gap: 10px !important; }
+.pdf-slide .pdf-body { gap: 8px !important; }
+.pdf-slide .pdf-body .card { padding: 8px 12px !important; }
+.pdf-slide .pdf-body:has(> .kpis) { gap: 6px !important; }
+.pdf-slide .pdf-body:has(> .kpis) .card { padding: 7px 10px !important; }
+.pdf-slide .pdf-body:has(> .kpis) .kpi { padding: 6px 10px !important; }
+.pdf-slide .pdf-body:has(> .kpis) .kpi .val { font-size: 20px !important; }
+.pdf-slide .pdf-body .card { margin-bottom: 0 !important; }
+.pdf-slide .dur-tbl th, .pdf-slide .dur-tbl td { padding: 3px 6px !important; }
+/* export PDF lewat dialog cetak: teks vektor, satu slide = satu halaman 16:9 */
+@page { size: 13.333in 7.5in; margin: 0; }
+@media print {
+  html, body, .app { background: #ffffff !important; }
+  body > *:not(.app), .app > *:not(#pdfStage) { display: none !important; }
+  .app { overflow: visible !important; height: auto !important; }
+  #pdfStage, #pdfStage * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  #pdfStage { position: absolute !important; left: 0; top: 0; width: 1280px; background: #ffffff; }
+  #pdfStage button, #pdfStage .btn, #pdfStage .status { display: none !important; }
+  .pdf-slide { page-break-after: always; break-after: page; }
+  .pdf-slide:last-child { page-break-after: auto; break-after: auto; }
+}
 </style>
 
 <div class="app">
@@ -776,49 +804,85 @@ function commonPrefix(titles) {
   var best = null; Object.keys(m).forEach(function (k) { if (!best || m[k] > m[best]) best = k; });
   return best && m[best] >= 3 ? { text: best, n: m[best] } : null;
 }
+function hourOf(s) { var m = /(\d{1,2}):(\d{2})/.exec(String(s == null ? '' : s)); return m ? (+m[1] + 7) % 24 : null; }
+function medianOf(v) { if (!v.length) return null; var d = v.slice().sort(function (p, q) { return p - q; }), h = d.length >> 1; return d.length % 2 ? d[h] : (d[h - 1] + d[h]) / 2; }
+function reelDur(b) { return (b.org || []).filter(function (x) { return x.type === 'reel' && x.duration != null; }); }
+function durBuckets(rs) {
+  var G = [['≤ 15 detik', function (d) { return d <= 15; }], ['16–30 detik', function (d) { return d > 15 && d <= 30; }], ['> 30 detik', function (d) { return d > 30; }]];
+  return G.map(function (g) { var s = rs.filter(function (x) { return g[1](x.duration); }); var v = sum(s, function (x) { return x.views; }), it = sum(s, inter); return { l: g[0], n: s.length, er: v ? it / v * 100 : null, avgV: s.length ? v / s.length : null }; });
+}
+function durCard(b) {
+  var rs = reelDur(b); if (rs.length < 3) return '';
+  var ds = rs.map(function (x) { return x.duration; }), avg = sum(rs, function (x) { return x.duration; }) / rs.length;
+  var bk = durBuckets(rs).filter(function (g) { return g.n > 0; });
+  return '<div class="card"><h3>Durasi Reel organik</h3><p class="sub">Median ' + dec(medianOf(ds), 0) + ' detik · rata-rata ' + dec(avg, 0) + ' detik · ' + rs.length + ' Reel</p>' +
+    '<div class="tw"><table class="dur-tbl"><thead><tr><th>Durasi</th><th>Reel</th><th>ER</th><th>Tayangan / konten</th></tr></thead><tbody>' +
+    bk.map(function (g) { return '<tr><td>' + g.l + '</td><td>' + g.n + '</td><td>' + (g.er == null ? '–' : pct(g.er, 1)) + '</td><td>' + compact(g.avgV) + '</td></tr>'; }).join('') +
+    '</tbody></table></div><p class="note dur-note">Rentang ' + dec(Math.min.apply(null, ds), 0) + '–' + dec(Math.max.apply(null, ds), 0) + ' detik. Rata-rata bisa terdorong satu video panjang, jadi median dibaca dulu.</p></div>';
+}
+function timeCard(b) {
+  var its = (b.org || []).filter(function (x) { return x.hour != null && x.views > 0; });
+  if (its.length < 6) return '';
+  var SL = [['Dini hari (00–05)', 0, 5], ['Pagi (05–11)', 5, 11], ['Siang (11–15)', 11, 15], ['Sore (15–18)', 15, 18], ['Malam (18–24)', 18, 24]];
+  var rows = SL.map(function (g) { var s = its.filter(function (x) { return x.hour >= g[1] && x.hour < g[2]; }); var v = sum(s, function (x) { return x.views; }), it = sum(s, inter); return { l: g[0], n: s.length, er: v ? it / v * 100 : null, avgV: s.length ? v / s.length : null }; }).filter(function (g) { return g.n > 0; });
+  var best = rows.filter(function (g) { return g.n >= 2; }).sort(function (p, q) { return q.er - p.er; })[0];
+  return '<div class="card"><h3>Waktu posting</h3><p class="sub">ER dan tayangan per jam posting (WIB) · ' + its.length + ' konten organik</p>' +
+    '<div class="tw"><table class="dur-tbl"><thead><tr><th>Jam posting</th><th>Konten</th><th>ER</th><th>Tayangan / konten</th></tr></thead><tbody>' +
+    rows.map(function (g) { return '<tr><td>' + g.l + '</td><td>' + g.n + '</td><td>' + (g.er == null ? '–' : pct(g.er, 1)) + '</td><td>' + compact(g.avgV) + '</td></tr>'; }).join('') +
+    '</tbody></table></div>' + (best ? '<p class="note dur-note">Slot terbaik: ' + best.l + ' dengan ER ' + pct(best.er, 1) + ' (minimal 2 konten).</p>' : '') + '</div>';
+}
 function findings1(b, a) {
-  var o = [], bt = function (t) { return '<b>' + t + '</b>'; };
+  var bt = function (t) { return '<b>' + t + '</b>'; };
   var share = b.totalViews ? b.oViews / b.totalViews * 100 : 0;
   var dER = a && a.er != null ? delta(b.erOrg, a.hasPromo ? a.erOrg : a.er, true) : null;
-  o.push('Tayangan organik ' + bt(compact(b.oViews)) + (b.hasPromo ? ' (' + dec(share, 0) + '% dari total ' + compact(b.totalViews) + ')' : '') + ', ER organik ' + bt(pct(b.erOrg)) + (dER ? ', ' + (dER.v >= 0 ? 'naik ' : 'turun ') + dec(Math.abs(dER.v), 1) + ' poin dari ' + esc(a.p.short || a.p.label) : '') + '.');
+  var org = b.org, c = [];
+  c.push('Tayangan organik ' + bt(compact(b.oViews)) + (b.hasPromo ? ' (' + dec(share, 0) + '% dari total ' + compact(b.totalViews) + ')' : '') + ', ER organik ' + bt(pct(b.erOrg)) + (dER ? ', ' + (dER.v >= 0 ? 'naik ' : 'turun ') + dec(Math.abs(dER.v), 1) + ' poin dari ' + esc(a.p.short || a.p.label) : '') + '.');
   if (b.top.length) {
     var mx = b.top[0].views, mn = b.top[b.top.length - 1].views;
-    o.push('Konten organik teratas ' + bt('“' + esc(b.top[0].title) + '”') + ' dengan ' + compact(mx) + ' tayangan; daftar teratas berkisar ' + compact(mn) + '–' + compact(mx) + ' tayangan per konten.');
-    var pre = commonPrefix(b.top.map(function (c) { return c.title; }));
-    if (pre) o.push('Seri ' + bt('“' + esc(pre.text) + '…”') + ' muncul ' + pre.n + ' kali dari ' + b.top.length + ' konten teratas dengan angka yang rapat, tanda formatnya konsisten.');
-    var reels = b.top.filter(function (c) { return c.type === 'reel'; });
-    if (reels.length) o.push('Reel masuk daftar teratas (' + reels.length + ' konten) dan jadi pendorong jangkauan utama.');
+    c.push('Konten organik teratas ' + bt('“' + esc(b.top[0].title) + '”') + ' dengan ' + compact(mx) + ' tayangan; daftar teratas berkisar ' + compact(mn) + '–' + compact(mx) + ' tayangan per konten.');
   }
-  if (b.hasPromo) o.push(bt(full(b.pNew) + ' pengikut baru') + ' datang dari ' + b.promo.length + ' konten giveaway dan kuis.');
-  if (b.hasPromo && b.er != null && b.erOrg != null && b.er - b.erOrg > 1) o.push('ER seluruh konten ' + pct(b.er) + ' lebih tinggi ' + dec(b.er - b.erOrg, 1) + ' poin dari ER organik karena komentar giveaway. Pakai ER organik sebagai acuan performa konten.');
-  return o.slice(0, 5);
+  if (b.a.audience != null && b.oViews) c.push('Jangkauan organik ' + bt(compact(b.a.audience)) + ' orang unik per konten, setara ' + dec(b.a.audience / b.oViews * 100, 0) + '% dari tayangan organik. Selisihnya karena satu orang bisa melihat lebih dari sekali.');
+  if (org.length) {
+    var L_ = sum(org, function (x) { return x.likes || 0; }), C_ = sum(org, function (x) { return x.comments || 0; }), S_ = sum(org, function (x) { return x.shares || 0; }), V_ = sum(org, function (x) { return x.saves || 0; }), T_ = (L_ + C_ + S_ + V_) || 1;
+    c.push('Interaksi organik terdiri dari ' + bt(dec(L_ / T_ * 100, 0) + '% likes') + ', ' + dec(C_ / T_ * 100, 0) + '% komentar, ' + dec(S_ / T_ * 100, 0) + '% share, dan ' + dec(V_ / T_ * 100, 0) + '% simpan.');
+  }
+  var reels = b.top.filter(function (x) { return x.type === 'reel'; });
+  if (reels.length) c.push('Reel masuk daftar teratas (' + reels.length + ' dari ' + b.top.length + ' konten) dan jadi pendorong tayangan utama.');
+  if (org.length) c.push('Tercatat ' + bt(org.length + ' konten organik') + ' dengan rata-rata ' + bt(compact(b.oViews / org.length)) + ' tayangan per konten.');
+  if (b.hasPromo) c.push(bt(full(b.pNew) + ' pengikut baru') + ' datang dari ' + b.promo.length + ' konten giveaway dan kuis.');
+  if (b.hasPromo && b.er != null && b.erOrg != null && b.er - b.erOrg > 1) c.push('ER seluruh konten ' + pct(b.er) + ' lebih tinggi ' + dec(b.er - b.erOrg, 1) + ' poin dari ER organik karena komentar giveaway. Pakai ER organik sebagai acuan performa konten.');
+  var rsD = reelDur(b);
+  if (rsD.length >= 3) { var bkD = durBuckets(rsD).filter(function (g) { return g.n > 0 && g.er != null; }).sort(function (p, q) { return q.er - p.er; }); c.splice(1, 0, 'Median durasi Reel organik ' + bt(dec(medianOf(rsD.map(function (x) { return x.duration; })), 0) + ' detik') + (bkD.length ? ', ER tertinggi di kelompok ' + bt(bkD[0].l) + ' (' + pct(bkD[0].er, 1) + ').' : '.')); }
+  return c.slice(0, 5);
 }
 function findings2(b, a) {
   if (!a) return ['Tambahkan satu periode lagi lewat upload data untuk melihat perbandingan.'];
-  var o = [], bt = function (t) { return '<b>' + t + '</b>'; };
+  var bt = function (t) { return '<b>' + t + '</b>'; }, c = [];
   var dv = delta(b.totalViews, a.totalViews), di = delta(b.totalInter, a.totalInter);
-  o.push('Tayangan ' + bt(dv ? dv.txt : '–') + ' (' + compact(a.totalViews) + ' → ' + compact(b.totalViews) + '), interaksi ' + bt(di ? di.txt : '–') + ' (' + full(a.totalInter) + ' → ' + full(b.totalInter) + ').');
-  if (a.er != null && b.er != null) o.push('ER (interaksi ÷ tayangan) naik dari ' + bt(pct(a.er)) + ' ke ' + bt(pct(b.er)) + (b.hasPromo && b.erOrg != null ? '; tanpa giveaway dan kuis ' + bt(pct(b.erOrg)) + ', jadi kenaikan tetap nyata.' : '.'));
-  var bestT = null; TYPES.forEach(function (t) { var x = b.types[t[0]].er, y = a.types[t[0]].er; if (x != null && y != null && (!bestT || x - y > bestT.d)) bestT = { l: t[1], x: x, y: y, d: x - y }; });
-  if (bestT) o.push('Kenaikan ER terbesar ada di ' + bt(bestT.l) + ' (' + pct(bestT.y) + ' → ' + pct(bestT.x) + '). Angka ini ikut menghitung konten giveaway pada periode yang memilikinya.');
-  if (a.a.nonFollowerPct != null && b.a.nonFollowerPct != null) o.push('Tayangan dari non-pengikut naik dari ' + bt(pct(a.a.nonFollowerPct)) + ' ke ' + bt(pct(b.a.nonFollowerPct)) + ', artinya jangkauan ke audiens baru membesar.');
-  if (a.linkRate != null && b.linkRate != null) o.push('Kunjungan profil ' + full(a.a.profileVisits) + ' → ' + full(b.a.profileVisits) + ', tetapi klik tautan bio hanya ' + bt(pct(b.linkRate)) + ' dari kunjungan (sebelumnya ' + pct(a.linkRate) + '). Trafik naik, konversinya belum.');
-  return o.slice(0, 5);
+  c.push('Tayangan ' + bt(dv ? dv.txt : '–') + ' (' + compact(a.totalViews) + ' → ' + compact(b.totalViews) + '), interaksi ' + bt(di ? di.txt : '–') + ' (' + full(a.totalInter) + ' → ' + full(b.totalInter) + ').');
+  if (a.er != null && b.er != null) c.push('ER (interaksi ÷ tayangan) ' + (b.er >= a.er ? 'naik' : 'turun') + ' dari ' + bt(pct(a.er)) + ' ke ' + bt(pct(b.er)) + (b.hasPromo && b.erOrg != null ? '; tanpa giveaway dan kuis ' + bt(pct(b.erOrg)) + '.' : '.'));
+  var gA = grossNew(a), gB = grossNew(b);
+  if (gA != null && gB != null) { var dg = delta(gB, gA); c.push('Pengikut baru dari konten ' + bt(dg ? dg.txt : '–') + ' (' + full(gA) + ' → ' + full(gB) + ').'); }
+  if (a.a.audience != null && b.a.audience != null) { var da = delta(b.a.audience, a.a.audience); c.push('Jangkauan organik ' + bt(da ? da.txt : '–') + ' (' + compact(a.a.audience) + ' → ' + compact(b.a.audience) + ').'); }
+  var bestT = null; TYPES.forEach(function (t) { var x = b.types[t[0]].er, y = a.types[t[0]].er; if (x != null && y != null && (!bestT || Math.abs(x - y) > Math.abs(bestT.d))) bestT = { l: t[1], x: x, y: y, d: x - y }; });
+  if (bestT) c.push('ER ' + bt(bestT.l) + ' berubah paling besar: ' + pct(bestT.y) + ' → ' + pct(bestT.x) + (b.hasPromo ? '. Angka ini ikut menghitung konten giveaway pada periode yang memilikinya.' : '.'));
+  return c.slice(0, 5);
 }
 function findings3(b) {
   if (!b.hasPromo) return ['Periode ini tidak punya data giveaway, kuis, atau game.'];
-  var o = [], bt = function (t) { return '<b>' + t + '</b>'; };
+  var bt = function (t) { return '<b>' + t + '</b>'; }, c = [];
   var by = b.promo.slice().sort(function (x, y) { return (y.newFollowers || 0) - (x.newFollowers || 0); });
   var t = by[0];
-  o.push(bt('“' + esc(t.title) + '”') + ' menyumbang ' + full(t.newFollowers || 0) + ' dari ' + full(b.pNew) + ' pengikut baru (' + dec(b.pNew ? (t.newFollowers || 0) / b.pNew * 100 : 0, 0) + '%).');
-  var eff = b.promo.filter(function (c) { return c.views > 0; }).map(function (c) { return { c: c, e: (c.newFollowers || 0) / c.views * 1000 }; }).sort(function (x, y) { return y.e - x.e; });
-  if (eff.length > 1) o.push('Efisiensi tertinggi ' + bt('“' + esc(eff[0].c.title) + '”') + ' dengan ' + dec(eff[0].e, 1) + ' pengikut per 1.000 tayangan, terendah ' + dec(eff[eff.length - 1].e, 1) + '.');
-  var comm = sum(b.promo, function (c) { return c.comments; }), tot = sum(b.promo, inter);
-  if (tot) o.push('Komentar ' + bt(dec(comm / tot * 100, 0) + '%') + ' dari seluruh interaksi giveaway dan kuis, wajar karena syarat ikut lewat komentar. Bandingkan dengan share untuk menilai minat nyata.');
+  c.push(bt('“' + esc(t.title) + '”') + ' menyumbang ' + full(t.newFollowers || 0) + ' dari ' + full(b.pNew) + ' pengikut baru (' + dec(b.pNew ? (t.newFollowers || 0) / b.pNew * 100 : 0, 0) + '%).');
+  var eff = b.promo.filter(function (x) { return x.views > 0; }).map(function (x) { return { x: x, e: (x.newFollowers || 0) / x.views * 1000 }; }).sort(function (p, q) { return q.e - p.e; });
+  if (eff.length > 1) c.push('Efisiensi tertinggi ' + bt('“' + esc(eff[0].x.title) + '”') + ' dengan ' + dec(eff[0].e, 1) + ' pengikut per 1.000 tayangan, terendah ' + dec(eff[eff.length - 1].e, 1) + '.');
+  c.push('Giveaway dan kuis menyumbang ' + bt(dec(b.pViews / (b.totalViews || 1) * 100, 0) + '%') + ' dari total tayangan (' + compact(b.pViews) + ' dari ' + compact(b.totalViews) + ').');
+  var comm = sum(b.promo, function (x) { return x.comments || 0; }), tot = sum(b.promo, inter), sh = sum(b.promo, function (x) { return (x.shares || 0) + (x.saves || 0); });
+  if (tot) c.push('Komentar ' + bt(dec(comm / tot * 100, 0) + '%') + ' dari seluruh interaksi giveaway dan kuis, wajar karena syarat ikut lewat komentar. Share dan simpan ' + bt(dec(sh / tot * 100, 0) + '%') + ' menunjukkan minat yang lebih nyata.');
   var low = by[by.length - 1];
-  if (by.length > 1 && (low.newFollowers || 0) <= Math.max(2, b.pNew * 0.03)) o.push(bt('“' + esc(low.title) + '”') + ' hanya membawa ' + full(low.newFollowers || 0) + ' pengikut; format ini belum menambah audiens.');
-  if (b.netOrg != null) o.push('Pengikut bersih periode ini ' + bt(signed(b.a.netFollowers, full)) + '. Tanpa ' + full(b.pNew) + ' pengikut dari konten ini, hasilnya sekitar ' + bt(signed(b.netOrg, full)) + '.');
-  return o.slice(0, 5);
+  if (by.length > 1 && (low.newFollowers || 0) <= Math.max(2, b.pNew * 0.03)) c.push(bt('“' + esc(low.title) + '”') + ' hanya membawa ' + full(low.newFollowers || 0) + ' pengikut; format ini belum menambah audiens.');
+  c.push('Ada ' + bt(b.promo.length + ' konten promo') + ' dengan rata-rata ' + bt(compact(b.pViews / b.promo.length)) + ' tayangan per konten.');
+  return c.slice(0, 5);
 }
 function buildRecs(b, a) {
   var r = [];
@@ -838,7 +902,20 @@ function buildRecs(b, a) {
   }
   if (b.hasPromo && b.er != null && b.erOrg != null && b.er - b.erOrg > 1) r.push({ pri: 'lo', t: 'Jadikan ER organik angka utama laporan', d: 'ER seluruh konten (' + pct(b.er) + ') terdorong komentar giveaway. ER organik (' + pct(b.erOrg) + ') lebih jujur untuk menilai kualitas konten dan target bulan depan.', w: 'Dasar: halaman 1 dan 2.' });
   if (a && a.a.nonFollowerPct != null && b.a.nonFollowerPct != null && b.a.nonFollowerPct > a.a.nonFollowerPct) r.push({ pri: 'lo', t: 'Pertahankan jangkauan non-pengikut', d: 'Porsi tayangan non-pengikut naik ke ' + pct(b.a.nonFollowerPct) + '. Pantau apakah porsi ini bertahan setelah periode giveaway berakhir.', w: 'Dasar: halaman 2, sumber tayangan.' });
-  return r.slice(0, 8);
+  var org = b.org, extra = [];
+  var bkR = durBuckets(reelDur(b)).filter(function (g) { return g.n >= 2 && g.er != null; }).sort(function (p, q) { return q.er - p.er; });
+  if (bkR.length > 1 && bkR[0].er - bkR[bkR.length - 1].er >= 1) extra.push({ pri: 'hi', t: 'Atur durasi Reel ke ' + bkR[0].l, d: 'Reel ' + bkR[0].l + ' punya ER ' + pct(bkR[0].er, 1) + ', sedangkan ' + bkR[bkR.length - 1].l + ' hanya ' + pct(bkR[bkR.length - 1].er, 1) + '. Prioritaskan durasi di kelompok pertama untuk Reel berikutnya.', w: 'Dasar: halaman 1, durasi Reel organik.' });
+  if (b.types.reel.er != null && b.types.postingan.er != null) {
+    var rv = b.types.reel.er, pv = b.types.postingan.er;
+    extra.push(rv > pv ? { pri: 'md', t: 'Perbanyak format Reel', d: 'ER Reel ' + pct(rv) + ' lebih tinggi dari Postingan (' + pct(pv) + '). Ubah sebagian Carousel dan Gambar menjadi Reel, lalu pantau ER-nya dua minggu.', w: 'Dasar: halaman 2, ER per jenis konten.' } : { pri: 'md', t: 'Perkuat format Postingan', d: 'ER Postingan ' + pct(pv) + ' lebih tinggi dari Reel (' + pct(rv) + '). Pertahankan Carousel yang sudah bekerja dan perbanyak variasi slide.', w: 'Dasar: halaman 2, ER per jenis konten.' });
+  }
+  var si = sum(org, function (x) { return (x.shares || 0) + (x.saves || 0); }), ii = sum(org, inter);
+  if (ii) extra.push({ pri: 'md', t: 'Dorong share dan simpan', d: 'Share dan simpan baru ' + dec(si / ii * 100, 0) + '% dari interaksi organik. Tutup caption dengan ajakan simpan untuk katalog, atau bagikan ke teman yang sedang cari outfit.', w: 'Dasar: halaman 1, komposisi interaksi organik.' });
+  if (org.length) extra.push({ pri: 'lo', t: 'Jaga ritme posting', d: 'Periode ini ada ' + org.length + ' konten organik dengan rata-rata ' + compact(b.oViews / org.length) + ' tayangan. Targetkan jumlah yang sama atau lebih, dan cek konten yang di bawah rata-rata.', w: 'Dasar: halaman 1, rata-rata tayangan per konten.' });
+  if (b.erOrg != null) extra.push({ pri: 'lo', t: 'Jadikan konten ER tinggi sebagai acuan', d: 'ER organik ' + pct(b.erOrg) + '. Konten di atas angka ini layak dijadikan template caption dan visual untuk minggu berikutnya.', w: 'Dasar: halaman 1, ER organik.' });
+  if (b.a.audience != null && b.oViews) extra.push({ pri: 'lo', t: 'Perluas jangkauan organik', d: 'Jangkauan organik ' + compact(b.a.audience) + ' orang unik. Gunakan Reel dan kolaborasi konten untuk menjangkau orang baru, bukan hanya pengikut lama.', w: 'Dasar: halaman 1, jangkauan organik.' });
+  extra.forEach(function (x) { if (r.length < 6) r.push(x); });
+  return r.slice(0, 6);
 }
 
 /* ---------- pages ---------- */
@@ -859,7 +936,7 @@ function render1(b, a) {
     pair('<div class="card kpi"><span class="lbl">Total tayangan' + (b.hasPromo ? ' organik' : '') + '</span>' + ptag + '<span class="val">' + rb(b.oViews) + '</span><span>' + chip(dv, vs) + '</span><span class="note">' + (b.hasPromo ? 'dari total ' + rb(b.totalViews) + ' · tanpa ' + b.promo.length + ' konten giveaway/kuis' : 'seluruh tayangan periode ini') + '</span></div>', cmpOf('', rb(aV), a && a.hasPromo ? 'dari total ' + rb(a.totalViews) : 'tayangan periode pembanding')) +
     pair('<div class="card kpi"><span class="lbl">Interaksi' + (b.hasPromo ? ' organik' : '') + '</span>' + ptag + '<span class="val">' + rb(b.oInter) + '</span><span>' + chip(di, vs) + '</span><span class="note">' + (b.hasPromo ? 'dari total ' + rb(b.totalInter) : 'seluruh interaksi periode ini') + '</span></div>', cmpOf('', rb(aI), a && a.hasPromo ? 'dari total ' + rb(a.totalInter) : 'interaksi periode pembanding')) +
     pair('<div class="card kpi hero"><span class="lbl">ER organik</span>' + ptag + '<span class="val">' + pct(b.erOrg) + '</span><span>' + chip(de, vs) + '</span><span class="note">interaksi organik ÷ tayangan organik' + (b.hasPromo ? ' · ER semua konten ' + pct(b.er) : '') + '</span></div>', cmpOf('', pct(aE), a && a.hasPromo ? 'ER semua konten ' + pct(a.er) : 'ER periode pembanding')) +
-    pair('<div class="card kpi"><span class="lbl">Audience</span>' + ptag + '<span class="val">' + rb(b.a.audience) + '</span><span>' + chip(da, vs) + '</span><span class="note">akun unik yang melihat konten</span></div>', cmpOf('', rb(a ? a.a.audience : null), 'akun unik periode pembanding')) + '</div>';
+    pair('<div class="card kpi"><span class="lbl">Jangkauan organik</span>' + ptag + '<span class="val">' + rb(b.a.audience) + '</span><span>' + chip(da, vs) + '</span><span class="note">' + (b.a.audienceSum ? 'orang unik per konten, dijumlah antar konten. Tayangan = total kali dilihat.' : 'akun unik yang melihat konten') + '</span></div>', cmpOf('', rb(a ? a.a.audience : null), (a && a.a.audienceSum ? 'orang unik per konten, dijumlah (akumulasi)' : 'akun unik periode pembanding'))) + '</div>';
   var topItems = b.top.slice(0, 10).map(function (c) { return { label: c.title, value: c.views, tip: c.title + '\n' + full(c.views) + ' tayangan' + (c.type ? ' · ' + c.type : '') + (c.likes != null ? ' · ' + full(c.likes) + ' suka' : '') }; });
   var topCard = '<div class="card"><h3>Konten organik teratas · jumlah tayangan</h3><p class="sub">' + esc(periodSub(b.p)) + (b.top.length ? ' · ' + b.top.length + ' konten organik tercatat' : '') + '</p>' + (topItems.length ? hbars(topItems) : '<div class="empty">Belum ada data per konten untuk periode ini. Upload CSV data konten.</div>') + '</div>';
   var parts = [{ label: 'Organik', value: b.oViews, color: 'var(--c1)' }]; if (b.hasPromo) parts.push({ label: 'Giveaway, kuis, game', value: b.pViews, color: 'var(--c4)' });
@@ -872,7 +949,8 @@ function render1(b, a) {
   var dates = {}; b.cs.forEach(function (c) { if (c.date && c.views) { dates[c.date] = (dates[c.date] || 0) + c.views; } });
   var dk = Object.keys(dates).sort(); var trend = '';
   if (dk.length >= 3) trend = '<div class="card"><h3>Tren tayangan harian</h3><p class="sub">Dari data konten bertanggal</p><div class="trend" data-pts="' + esc(JSON.stringify(dk.map(function (k) { return { x: k.slice(5), y: dates[k] }; }))) + '"></div></div>';
-  el.innerHTML = kp + '<div class="row2">' + topCard + findingsCard(S.ai ? S.ai.p1 : findings1(b, a)) + '</div>' + trend + '<div class="rowc">' + d1 + d2 + '</div><div class="rowc">' + d3 + fun + '</div>';
+  var dC = durCard(b), tC = timeCard(b);
+  el.innerHTML = kp + '<div class="row2">' + topCard + findingsCard(S.ai ? S.ai.p1 : findings1(b, a)) + '</div>' + trend + '<div class="rowc">' + d1 + d3 + '</div>' + (dC || tC ? '<div class="rowc">' + dC + tC + '</div>' : '');
   drawTrends();
 }
 function drawTrends() {
@@ -882,66 +960,64 @@ function render2(b, a) {
   var el = $('#p2');
   if (!b || !a) { el.innerHTML = '<div class="empty">Perbandingan butuh dua periode. Upload data untuk periode kedua, atau pilih periode lain di bagian atas.</div>'; return; }
   var L = b, R = a;
+  var gL = grossNew(L), gR = grossNew(R);
   var rows = [
     ['Views (tayangan)', L.totalViews, R.totalViews, full, false, false],
-    ['Audience', L.a.audience, R.a.audience, full, false, false],
+    ['Jangkauan organik (orang unik per konten)', L.a.audience, R.a.audience, full, false, false],
     ['Interaksi', L.totalInter, R.totalInter, full, false, false],
     ['ER (interaksi ÷ tayangan)', L.er, R.er, function (v) { return pct(v, 2); }, true, true],
-    ['ER (interaksi ÷ pengikut)', L.erFollow, R.erFollow, function (v) { return pct(v, 2); }, true, true],
+    ['Interaksi ÷ pengikut baru', gL ? L.totalInter / gL : null, gR ? R.totalInter / gR : null, function (v) { return dec(v, 1) + 'x'; }, false, false],
     ['ER organik (tanpa giveaway/kuis)', L.hasPromo ? L.erOrg : (L.promoKnown ? L.er : null), R.hasPromo ? R.erOrg : (R.promoKnown ? R.er : null), function (v) { return pct(v, 1); }, true, false],
-    ['Pengikut bersih', L.a.netFollowers, R.a.netFollowers, function (v) { return v == null ? '–' : signed(v, full); }, false, false, true],
-    ['Pengikut baru (follows)', L.a.follows, R.a.follows, full, false, false],
-    ['Kunjungan profil', L.a.profileVisits, R.a.profileVisits, full, false, false],
-    ['Klik tautan bio', L.a.linkClicks, R.a.linkClicks, full, false, false],
-    ['Views dari non-pengikut', L.a.nonFollowerPct, R.a.nonFollowerPct, function (v) { return pct(v, 1); }, true, false],
+    ['Pengikut bersih*', L.a.netFollowers != null ? L.a.netFollowers : gL, R.a.netFollowers != null ? R.a.netFollowers : gR, function (v) { return v == null ? '–' : signed(v, full); }, false, false, true],
+    ['Pengikut baru (follows)', L.a.follows != null ? L.a.follows : gL, R.a.follows != null ? R.a.follows : gR, full, false, false],
     ['Views postingan', L.types.postingan.views, R.types.postingan.views, compact, false, false],
     ['Views reel', L.types.reel.views, R.types.reel.views, compact, false, false],
-    ['Views story', L.types.story.views, R.types.story.views, compact, false, false]
+    ['Durasi Reel median (organik)', medianOf(reelDur(L).map(function (x) { return x.duration; })), medianOf(reelDur(R).map(function (x) { return x.duration; })), function (v) { return dec(v, 0) + ' detik'; }, false, false]
   ];
   var tbl = '<div class="card"><h3>Komparasi metrik</h3><p class="sub">Selisih = ' + esc(R.p.short || R.p.label) + ' dibanding ' + esc(L.p.short || L.p.label) + ' (periode aktif)</p><div class="tw"><table><thead><tr><th>Metrik</th><th>' + esc(L.p.short || L.p.label) + '</th><th>' + esc(R.p.short || R.p.label) + '</th><th>Selisih</th></tr></thead><tbody>' + rows.map(function (r) {
-    var d = r[6] ? (r[1] != null && r[2] != null ? { v: r[2] - r[1], txt: signed(r[2] - r[1], full) } : null) : delta(r[2], r[1], r[4]);
+    var d = r[6] ? (r[1] != null && r[2] != null ? { v: r[1] - r[2], txt: signed(r[1] - r[2], full) } : null) : delta(r[1], r[2], r[4]);
     return '<tr' + (r[5] ? ' class="hl"' : '') + '><td>' + esc(r[0]) + '</td><td>' + (r[1] == null ? '–' : r[3](r[1])) + '</td><td>' + (r[2] == null ? '–' : r[3](r[2])) + '</td><td>' + (d ? chip(d) : '–') + '</td></tr>';
-  }).join('') + '</tbody></table></div></div>';
+  }).join('') + '</tbody></table></div><p class="note" style="margin:8px 0 0">* Dari kolom Mengikuti (pengikut baru per konten), belum dikurangi unfollow. Interaksi ÷ pengikut baru adalah rasio, bukan persen, karena total pengikut tidak ada di CSV.</p></div>';
   var erGroups = [{ label: a.p.short || a.p.label, values: [a.er], colors: ['var(--prev)'], names: ['ER periode pembanding'] }, { label: (b.p.short || b.p.label) + ' · semua konten', values: [b.er], colors: ['var(--c1)'], names: ['ER semua konten'] }];
   if (b.hasPromo) erGroups.push({ label: (b.p.short || b.p.label) + ' · tanpa giveaway/kuis', values: [b.erOrg], colors: ['var(--c2)'], names: ['ER organik'] });
   var erChart = columns(erGroups, [{ name: 'ER', color: 'var(--c1)' }], function (v) { return pct(v, 1); });
   var erCard = '<div class="card"><h3>ER tiap periode</h3><p class="sub">Interaksi dibagi tayangan</p>' + erChart + '</div>';
-  var typeCard = '<div class="card"><h3>ER per jenis konten</h3><p class="sub">Interaksi dibagi tayangan, termasuk giveaway bila ada</p>' + columns(TYPES.map(function (t) { return { label: t[1], values: [a.types[t[0]].er, b.types[t[0]].er] }; }), [{ name: a.p.short || a.p.label, color: 'var(--prev)' }, { name: b.p.short || b.p.label, color: 'var(--c1)' }], function (v) { return pct(v, 1); }) + '</div>';
+  var typeCard = '<div class="card"><h3>ER per jenis konten</h3><p class="sub">Interaksi dibagi tayangan, termasuk giveaway bila ada</p>' + columns(TYPES.filter(function (t) { return t[0] !== 'story'; }).map(function (t) { return { label: t[1], values: [a.types[t[0]].er, b.types[t[0]].er] }; }), [{ name: a.p.short || a.p.label, color: 'var(--prev)' }, { name: b.p.short || b.p.label, color: 'var(--c1)' }], function (v) { return pct(v, 1); }) + '</div>';
   var hm = '<div class="card"><h3>Proporsi ER per Jenis Konten</h3><p class="sub">Lebar balok proporsional dengan besaran ER</p>' + 
     '<div style="margin-bottom:10px"><b>' + esc(a.p.short || a.p.label) + '</b><div style="margin-top:6px">' + propBars([
       { label: 'Postingan', value: a.types.postingan.er || 0, color: 'var(--c1)' },
-      { label: 'Reel', value: a.types.reel.er || 0, color: 'var(--c2)' },
-      { label: 'Story', value: a.types.story.er || 0, color: 'var(--c3)' }
+      { label: 'Reel', value: a.types.reel.er || 0, color: 'var(--c2)' }
     ]) + '</div></div>' + 
     '<div><b>' + esc(b.p.short || b.p.label) + '</b><div style="margin-top:6px">' + propBars([
       { label: 'Postingan', value: b.types.postingan.er || 0, color: 'var(--c1)' },
-      { label: 'Reel', value: b.types.reel.er || 0, color: 'var(--c2)' },
-      { label: 'Story', value: b.types.story.er || 0, color: 'var(--c3)' }
+      { label: 'Reel', value: b.types.reel.er || 0, color: 'var(--c2)' }
     ]) + '</div></div></div>';
-  var fa = a.a.profileVisits != null && b.a.profileVisits != null;
-  var fn = '<div class="card"><h3>Traffic ke profil</h3><p class="sub">Tingkat konversi tiap tahap</p>' + (fa ? '<div class="tw"><table><thead><tr><th>Tahap</th><th>' + esc(L.p.short || L.p.label) + '</th><th>' + esc(R.p.short || R.p.label) + '</th></tr></thead><tbody>' +
-    '<tr><td>Tayangan → kunjungan profil</td><td>' + pct(L.visitRate, 2) + '</td><td>' + pct(R.visitRate, 2) + '</td></tr>' +
-    '<tr><td>Kunjungan profil → klik tautan</td><td>' + pct(L.linkRate, 2) + '</td><td>' + pct(R.linkRate, 2) + '</td></tr>' +
-    '<tr><td>Kunjungan profil</td><td>' + full(L.a.profileVisits) + '</td><td>' + full(R.a.profileVisits) + '</td></tr></tbody></table></div>' : '<div class="empty">Data kunjungan profil belum lengkap.</div>') + '</div>';
-  el.innerHTML = '<div class="row2">' + tbl + findingsCard(S.ai ? S.ai.p2 : findings2(a, b)) + '</div><div class="rowc">' + erCard + typeCard + '</div><div class="rowc">' + hm + fn + '</div>';
+  el.innerHTML = '<div class="row2">' + tbl + findingsCard(S.ai ? S.ai.p2 : findings2(a, b)) + '</div><div class="rowc">' + erCard + typeCard + '</div><div class="rowc one">' + hm + '</div>';
 }
 
 function hasEng(c) { return c.likes != null || c.comments != null || c.reposts != null || c.shares != null || c.saves != null; }
 function findingsTop(b) {
-  var o = [], bt = function (t) { return '<b>' + t + '</b>'; };
+  var bt = function (t) { return '<b>' + t + '</b>'; }, c = [];
   if (!b.top.length) return ['Belum ada data konten spesifik.'];
-  var t1 = b.top[0], t1er = t1.views ? inter(t1) / t1.views * 100 : 0;
-  o.push('Peringkat 1 dikuasai oleh ' + bt('“' + esc(t1.title) + '”') + ' (' + compact(t1.views) + ' views' + (hasEng(t1) ? ', ER ' + pct(t1er) : '') + ').');
-  var reels = b.top.slice(0, 15).filter(function(c) { return c.type === 'reel'; }).length;
-  o.push('Dari ' + Math.min(15, b.top.length) + ' konten teratas, ' + bt(reels + ' di antaranya adalah Reel') + ', menunjukkan format video cukup dominan mendorong traffic.');
-  var avgV = sum(b.top.slice(0, 15), function(c){return c.views;}) / Math.min(15, b.top.length);
-  o.push('Rata-rata tayangan untuk kelompok top performance ini adalah ' + bt(compact(avgV)) + ' views per konten.');
-  return o;
+  var top = b.top.slice(0, 10);
+  var t1 = top[0], t1er = t1.views ? inter(t1) / t1.views * 100 : 0;
+  c.push('Peringkat 1 dikuasai oleh ' + bt('“' + esc(t1.title) + '”') + ' (' + compact(t1.views) + ' views' + (hasEng(t1) ? ', ER ' + pct(t1er) : '') + ').');
+  var reels = top.filter(function (x) { return x.type === 'reel'; }).length;
+  c.push('Dari ' + top.length + ' konten teratas, ' + bt(reels + ' di antaranya adalah Reel') + ', menunjukkan format video cukup dominan mendorong traffic.');
+  var avgV = sum(top, function (x) { return x.views; }) / top.length;
+  c.push('Rata-rata tayangan untuk kelompok top performance ini adalah ' + bt(compact(avgV)) + ' views per konten.');
+  var erTop = top.filter(function (x) { return x.views > 0; }).map(function (x) { return { x: x, e: inter(x) / x.views * 100 }; }).sort(function (p, q) { return q.e - p.e; })[0];
+  if (erTop) c.push('ER tertinggi di daftar ini ' + bt(pct(erTop.e)) + ' dari “' + esc(erTop.x.title) + '”, dengan tayangan ' + compact(erTop.x.views) + '.');
+  var sh = sum(top, function (x) { return (x.shares || 0) + (x.saves || 0); }), ti = sum(top, inter);
+  if (ti) c.push('Share dan simpan menyumbang ' + bt(dec(sh / ti * 100, 0) + '%') + ' dari interaksi 10 konten teratas.');
+  var share10 = sum(top, function (x) { return x.views; }) / (b.oViews || 1) * 100;
+  c.push('Sepuluh konten teratas mengumpulkan ' + bt(dec(share10, 0) + '%') + ' dari tayangan organik periode ini.');
+  return c.slice(0, 5);
 }
 function render3(b, a) {
   var el = $('#p3');
   if (!b || !b.top.length) { el.innerHTML = '<div class="empty">Belum ada data per konten organik. Pastikan upload CSV data konten.</div>'; return; }
-  var items = b.top.slice(0, 15);
+  var items = b.top.slice(0, 10);
   var list = items.map(function(c, i) {
     var er = c.views ? (inter(c) / c.views * 100) : 0;
     return '<div class="trow" style="display:flex; gap:12px; align-items:center; padding:10px; border-bottom:1px solid var(--line)">' + 
@@ -958,7 +1034,7 @@ function render3(b, a) {
       '</div>' + 
     '</div>';
   }).join('');
-  var cList = '<div class="card"><h3>Top 15 Performance Konten</h3><p class="sub">Konten organik dengan tayangan tertinggi</p><div style="display:flex; flex-direction:column">' + list + '</div></div>';
+  var cList = '<div class="card"><h3>Top 10 Performance Konten</h3><p class="sub">Konten organik dengan tayangan tertinggi</p><div style="display:flex; flex-direction:column">' + list + '</div></div>';
   el.innerHTML = '<div class="row2">' + cList + findingsCard(S.ai && S.ai.p3_top ? S.ai.p3_top : findingsTop(b), 'Insight Top Performance') + '</div>';
 }
 function render4(b) {
@@ -981,12 +1057,13 @@ function render4(b) {
   var fnC = '<div class="card"><h3>Corong giveaway dan kuis</h3><p class="sub">Dari tayangan sampai pengikut baru</p>' + funnel([{ label: 'Tayangan', value: tv }, { label: 'Interaksi', value: ti }, { label: 'Pengikut baru', value: tn }], 'var(--c1)') + '</div>';
   el.innerHTML = tbl + findingsCard(S.ai ? S.ai.p3 : findings3(b)) + '<div class="rowc">' + nf1 + shareD + '</div><div class="rowc">' + effC + compC + '</div>' + fnC;
 }
+function grossNew(b) { if (!b || !b.cs.some(function (x) { return x.newFollowers != null; })) return null; return sum(b.cs, function (x) { return x.newFollowers || 0; }); }
 function render5(b, a) {
   var el = $('#p5');
   if (!b) { el.innerHTML = '<div class="empty">Belum ada data.</div>'; return; }
-  var recs = S.ai ? S.ai.recs : buildRecs(b, a);
+  var recs = (S.ai ? S.ai.recs : buildRecs(b, a)).slice(0, 6);
   var PRI = { hi: ['Prioritas tinggi', 'hi'], md: ['Prioritas sedang', 'md'], lo: ['Pantau', 'lo'] };
-  var key = '<div class="keystrip"><div><small>Tayangan organik</small><b>' + compact(b.oViews) + '</b></div><div><small>ER organik</small><b>' + pct(b.erOrg) + '</b></div><div><small>Pengikut baru dari giveaway/kuis</small><b>' + (b.hasPromo ? full(b.pNew) : '–') + '</b></div><div><small>Pengikut bersih</small><b>' + (b.a.netFollowers != null ? signed(b.a.netFollowers, full) : '–') + '</b></div></div>';
+  var key = '<div class="keystrip"><div><small>Tayangan organik</small><b>' + compact(b.oViews) + '</b></div><div><small>ER organik</small><b>' + pct(b.erOrg) + '</b></div><div><small>Pengikut baru dari giveaway/kuis</small><b>' + (b.hasPromo ? full(b.pNew) : '–') + '</b></div><div><small>Pengikut bersih</small><b>' + (b.a.netFollowers != null ? signed(b.a.netFollowers, full) : (grossNew(b) != null ? full(grossNew(b)) + ' <span class="note" style="font-size:11px">(dari konten, sebelum unfollow)</span>' : '–')) + '</b></div></div>';
   var head = '<div class="card"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div><h3>Rekomendasi akhir</h3><p class="sub" style="margin-top:2px">' + (S.ai ? 'Disusun ulang oleh AI dari angka periode ' + esc(b.p.label) : 'Disusun otomatis dari angka periode ' + esc(b.p.label)) + '</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="aiBtn" type="button"' + (provider() ? '' : ' hidden') + '>' + (S.ai ? 'Hitung ulang otomatis' : 'Susun ulang dengan AI') + '</button></div></div>' + key + '<div id="aiStatus"></div></div>';
   var blocks = recs.length ? '<div class="recs">' + recs.map(function (r) { var p = PRI[r.pri] || PRI.md; return '<article class="card rec"><span class="pri ' + p[1] + '">' + p[0] + '</span><h4>' + esc(r.t) + '</h4><p>' + esc(r.d) + '</p><div class="why">' + esc(r.w || '') + '</div></article>'; }).join('') + '</div>' : '<div class="empty">Data belum cukup untuk menyusun rekomendasi.</div>';
   el.innerHTML = head + blocks;
@@ -994,7 +1071,7 @@ function render5(b, a) {
 }
 
 /* ---------- render all ---------- */
-var TITLES = { 1: ['Ringkasan organik', 'Performa konten organik'], 2: ['Komparasi periode', 'Perbandingan 2 periode'], 3: ['Top Performance', '15 Konten Organik Terbaik'], 4: ['Giveaway, game, dan kuis', 'Hasil promosi'], 5: ['Rekomendasi', 'Langkah berikutnya'] };
+var TITLES = { 1: ['Ringkasan organik', 'Performa konten organik'], 2: ['Komparasi periode', 'Perbandingan 2 periode'], 3: ['Top Performance', '10 Konten Organik Terbaik'], 4: ['Giveaway, game, dan kuis', 'Hasil promosi'], 5: ['Rekomendasi', 'Langkah berikutnya'] };
 function renderAll() {
   if (!S.periods.length && !S.rows.length && !S.daily.length) resetData();
   if (!S.selB || !resolveRange(S.selB)) defaultSel();
@@ -1070,6 +1147,8 @@ function resolveRange(r) {
     var lastF = dr.slice().reverse().find(function (x) { return x.followersTotal != null; }); if (lastF) acc.followersTotal = lastF.followersTotal;
   }
   var label = fmtRange(r.s, r.e);
+  var rch = rows.filter(function (x) { return x.reach != null && !PROMO[x.category]; });
+  if (acc.audience == null && rch.length) { acc.audience = sum(rch, function (x) { return x.reach; }); acc.audienceSum = true; }
   var note = (r.s < cov.min || r.e > cov.max) ? 'data hanya mencakup ' + fmtRange(r.s < cov.min ? cov.min : r.s, r.e > cov.max ? cov.max : r.e) : '';
   return { id: 'v-' + r.s + '_' + r.e, label: label, short: label, start: r.s, end: r.e, account: acc, contents: rows, note: note };
 }
@@ -1289,6 +1368,8 @@ var COL = {
   shares: /^(share|shares|bagikan|dibagikan|frekuensidibagikan)$/, 
   saves: /^(simpan|saves|save|disimpan|frekuensidisimpan)$/,
   newFollowers: /^(pengikutbaru|followersbaru|newfollowers|followbaru|follows|newfollower|mengikuti)$/,
+  reach: /^(jangkauan|reach)$/,
+  duration: /^(durasi|durasidetik|duration|durationseconds)$/,
   url: /^(url|link|tautan|tautanpermanen|permalink|linkkonten|tautankonten|urlkonten)$/
 };var ACCX = {
   audience: /^(audience|jangkauan|reach|penonton|pemirsa|audienceakun)$/,
@@ -1323,7 +1404,7 @@ function capLink(c, n) {
   return c.url ? '<a class="clink" href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer" title="Buka konten di Instagram">' + t + '<span aria-hidden="true" style="margin-left:4px">↗</span></a>' : t;
 }
 function safeUrl(u) { u = String(u == null ? '' : u).trim(); return /^https?:\/\//i.test(u) ? u : ''; }
-function stripItem(i) { return { title: cap(i.title), full: i.full || i.title, url: safeUrl(i.url) || null, date: i.date || null, platform: i.platform || null, type: i.type || null, category: i.category || 'organic', views: i.views || 0, likes: i.likes, comments: i.comments, reposts: i.reposts, shares: i.shares, saves: i.saves, newFollowers: i.newFollowers }; }
+function stripItem(i) { return { title: cap(i.title), full: i.full || i.title, url: safeUrl(i.url) || null, date: i.date || null, platform: i.platform || null, type: i.type || null, category: i.category || 'organic', views: i.views || 0, likes: i.likes, comments: i.comments, reposts: i.reposts, shares: i.shares, saves: i.saves, newFollowers: i.newFollowers, reach: i.reach, duration: i.duration, hour: i.hour }; }
 var uid = 0;
 function mkPeriod(label, items) {
   var ds = items.map(function (i) { return i.date; }).filter(Boolean).sort();
@@ -1336,6 +1417,7 @@ function tableToData(rows, fname) {
   var head = rows[0].map(norm);
   if (/^(metrik|metric|indikator|metrics)$/.test(head[0])) return metricsTable(rows);
   var idx = {}; Object.keys(COL).forEach(function (k) { var i = head.findIndex(function (h) { return COL[k].test(h); }); if (i >= 0) idx[k] = i; });
+  var pubI = head.findIndex(function (h) { return /^(waktupenerbitan|publishtime|posttime|waktuposting|tanggalposting|publishdate)$/.test(h); }); if (pubI >= 0) idx.tanggal = pubI;
   if (idx.judul == null && idx.tanggal != null) {
     var di = {}; Object.keys(COLD).forEach(function (k) { var i = head.findIndex(function (h) { return COLD[k].test(h); }); if (i >= 0) di[k] = i; });
     var keys = Object.keys(di).filter(function (k) { return k !== 'tanggal'; });
@@ -1358,7 +1440,7 @@ function tableToData(rows, fname) {
     }
     var cat = g('kategori') != null && String(g('kategori')).trim() ? normCat(g('kategori')) : normCat(title);
     return { periodLabel: String(g('periode') || '').trim(), date: parseDate(g('tanggal')), title: title, platform: g('platform') ? String(g('platform')).trim() : null, type: normType(g('jenis')), category: cat,
-      views: num(g('views')) || 0, likes: num(g('likes')), comments: num(g('comments')), reposts: num(g('reposts')), shares: num(g('shares')), saves: num(g('saves')), newFollowers: num(g('newFollowers')), url: g('url') };
+      views: num(g('views')) || 0, likes: num(g('likes')), comments: num(g('comments')), reposts: num(g('reposts')), shares: num(g('shares')), saves: num(g('saves')), newFollowers: num(g('newFollowers')), reach: num(g('reach')), duration: num(g('duration')), hour: hourOf(g('tanggal')), url: g('url') };
   }).filter(Boolean);
   if (!items.length) throw new Error('Tidak ada baris konten yang terbaca.');
   var out = { periods: [], rows: [], warn: '' }, byLab = {}, skipped = 0, undated = 0, accBy = {};
@@ -1658,7 +1740,7 @@ async function runAI() {
   var b = stats(cur()), pa = prev(), a = pa ? stats(pa) : null; if (!b) return;
   var sm = function (s) { return s && { periode: s.p.label, tayangan_total: s.totalViews, interaksi_total: s.totalInter, tayangan_organik: s.oViews, interaksi_organik: s.oInter, er_total_persen: s.er, er_organik_persen: s.erOrg, akun: s.a, pengikut_baru_dari_promo: s.pNew, pengikut_bersih_tanpa_promo: s.netOrg, konten_organik_teratas: s.top.slice(0, 8).map(function (c) { return { judul: c.title, tayangan: c.views }; }), promo: s.promo.map(function (c) { return { judul: c.title, kategori: c.category, tayangan: c.views, likes: c.likes, komentar: c.comments, repost: c.reposts, share: c.shares, pengikut_baru: c.newFollowers }; }) }; };
   var prompt = 'Kamu analis media sosial untuk brand fashion modest grosir (YMD). Berdasarkan data JSON berikut, tulis findings dan rekomendasi dalam bahasa Indonesia yang ringkas dan konkret. Pakai HANYA angka dari data; jangan mengarang angka. Catatan: ER organik = interaksi organik ÷ tayangan organik (tanpa giveaway/kuis).\n' +
-    'Balas HANYA JSON: {"p1":["3-5 poin findings ringkasan organik"],"p2":["3-5 poin findings komparasi periode"],"p3_top":["3-5 poin findings konten top performance"],"p4":["3-5 poin findings giveaway/kuis"],"recs":[{"pri":"hi|md|lo","t":"judul singkat","d":"1-2 kalimat tindakan","w":"dasar angka"}]} dengan 4-6 rekomendasi. Poin boleh memakai <b>tag tebal</b> untuk angka penting, tanpa tag lain.\n\nDATA:\n' + JSON.stringify({ periode_aktif: sm(b), pembanding: sm(a) });
+    'Balas HANYA JSON: {"p1":["5 poin findings ringkasan organik"],"p2":["5 poin findings komparasi periode"],"p3_top":["5 poin findings konten top performance (10 konten)"],"p4":["5 poin findings giveaway/kuis"],"recs":[{"pri":"hi|md|lo","t":"judul singkat","d":"1-2 kalimat tindakan","w":"dasar angka"}]} dengan TEPAT 5 poin per halaman dan MINIMAL 5 rekomendasi. Poin boleh memakai <b>tag tebal</b> untuk angka penting, tanpa tag lain.\n\nDATA:\n' + JSON.stringify({ periode_aktif: sm(b), pembanding: sm(a) });
   var ctl = new AbortController(); S.ctl = ctl; var st = $('#aiStatus'); st.innerHTML = '<div class="status"><span><span class="spin"></span>' + (prov === 'gemini' ? 'Gemini' : 'Claude') + ' menyusun insight… 15–60 detik.</span><button class="btn" id="aiStop" type="button">Berhenti</button></div>';
   $('#aiStop').onclick = function () { ctl.abort(); };
   try {
@@ -1720,13 +1802,10 @@ if($('#pdfCancel')) $('#pdfCancel').addEventListener('click', function () { $('#
 
 if($('#pdfConfirm')) $('#pdfConfirm').addEventListener('click', async function () {
   $('#pdfModal').hidden = true;
-  var btn = $('#pdfBtn'), origText = btn.innerHTML, app = $('.app'), stage = null;
+  var btn = $('#pdfBtn'), origText = btn.innerHTML, app = $('.app'), stage = null, origTitle = document.title;
   btn.innerHTML = '<span class="spin"></span>Memproses...';
   btn.disabled = true;
   try {
-    if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    if (!(window.jspdf && window.jspdf.jsPDF)) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) throw new Error('Pustaka PDF belum termuat. Cek koneksi internet, lalu coba lagi.');
     app.classList.add('pdf-export');
     var title = $('#pdfTitle').value || 'SOCMED INSIGHT REPORT';
     var author = $('#pdfAuthor').value || '-';
@@ -1751,7 +1830,7 @@ if($('#pdfConfirm')) $('#pdfConfirm').addEventListener('click', async function (
       { p: 1, title: TITLES[1][0], pick: function (ch) { return ch.filter(function (n) { return n.classList.contains('kpis') || n.classList.contains('rowc'); }); } },
       { p: 1, title: 'Konten organik teratas', pick: function (ch) { return ch.filter(function (n) { return n.classList.contains('row2') || (n.classList.contains('card') && !!n.querySelector('.trend')); }); } },
       { p: 2, title: 'Komparasi metrik', pick: function (ch) { return ch.filter(hasCls('row2')); } },
-      { p: 2, title: 'Komparasi periode · ER & traffic', pick: function (ch) { return ch.filter(hasCls('rowc')); } },
+      { p: 2, title: 'Komparasi periode · ER & proporsi', pick: function (ch) { return ch.filter(hasCls('rowc')); } },
       { p: 3, title: 'Top Performance', pick: function (ch) { return ch; } },
       { p: 4, title: 'Giveaway, game, dan kuis', pick: function (ch) { return ch.slice(0, 2); } },
       { p: 4, title: 'Giveaway, game, dan kuis · grafik', cls: 'pdf-grafik', pick: function (ch) { return ch.slice(2); } },
@@ -1779,26 +1858,14 @@ if($('#pdfConfirm')) $('#pdfConfirm').addEventListener('click', async function (
     });
     drawTrends();
 
-    /* render tiap slide terpisah lalu susun jadi PDF landscape 16:9 */
-    var pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'in', format: [13.333, 7.5], compress: true });
-    var pages = [cover].concat(built.map(function (b) { return b.slide; }));
-    for (var i = 0; i < pages.length; i++) {
-      var canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', width: 1280, height: 720, windowWidth: 1280, windowHeight: 720, useCORS: true, logging: false });
-      if (i > 0) pdf.addPage([13.333, 7.5], 'landscape');
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 13.333, 7.5);
-    }
-    var blob = pdf.output('blob');
-    var fname = 'SOCMED_INSIGHT_' + dateStr.replace(/ /g, '_') + '.pdf';
-    if (S.downloads) {
-      await S.downloads.save({ filename: fname, data: blob });
-    } else {
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    }
+    /* teks tetap teks: cetak lewat dialog browser (Save as PDF), tiap slide 1280x720 = 16:9 */
+    document.title = 'SOCMED_INSIGHT_' + dateStr.replace(/ /g, '_');
+    await new Promise(function (r) { setTimeout(r, 150); });
+    window.print();
   } catch (err) {
     if (!(err && err.code === 'declined')) popup('PDF belum berhasil dibuat', String((err && err.message) || 'Terjadi kesalahan saat membuat PDF.'), 'Coba lagi. Pembuatan PDF butuh koneksi internet untuk memuat pustakanya.');
   } finally {
+    document.title = origTitle;
     app.classList.remove('pdf-export');
     if (stage) stage.remove();
     drawTrends();
