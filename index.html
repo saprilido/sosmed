@@ -16,9 +16,9 @@
   --ink-2: #4a4d5c;
   --muted: #747889;
   --line: #e3e5ee;
-  --accent: #c2185b;
+  --accent: #d6457a;
   --accent-ink: #ffffff;
-  --accent-soft: #fce6ef;
+  --accent-soft: rgba(214,69,122,.14);
   --c1: #c2185b;
   --c2: #2a78d6;
   --c3: #1baf7a;
@@ -31,7 +31,17 @@
   --flat-bg: #eceef4;
   --tip-bg: #15161d;
   --tip-ink: #ffffff;
-  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif;
+  --mesh: radial-gradient(1200px 700px at 8% -10%, #ffd6e7 0%, transparent 60%), radial-gradient(1000px 600px at 100% 0%, #d4e6ff 0%, transparent 55%), radial-gradient(900px 700px at 60% 110%, #d8f6ea 0%, transparent 60%), #f3f1f8;
+  --surface: rgba(255,255,255,.58);
+  --surface-2: rgba(255,255,255,.42);
+  --line: rgba(60,62,100,.10);
+  --nav-active: rgba(255,255,255,.8);
+  --th-bg: rgba(60,62,100,.07);
+  --th-ink: #3a3d52;
+  --blur: blur(22px) saturate(170%);
+  --glass-border: 1px solid rgba(255,255,255,.75);
+  --glass-shadow: 0 10px 30px rgba(40,44,90,.10), inset 0 1px 0 rgba(255,255,255,.9);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -40,6 +50,7 @@
     --c1: #e0508a; --c2: #3987e5; --c3: #199e70; --c4: #c98500; --prev: #5f6374;
     --good: #3fcf5f; --good-bg: #12301a; --bad: #ff8a80; --bad-bg: #3a1815; --flat-bg: #262836;
     --tip-bg: #f2f3f7; --tip-ink: #15161d; color-scheme: dark;
+  --mesh: radial-gradient(1000px 600px at 5% -5%, rgba(214,69,122,.28), transparent 60%), radial-gradient(900px 600px at 100% 0%, rgba(63,127,217,.22), transparent 55%), radial-gradient(800px 700px at 60% 120%, rgba(34,168,122,.18), transparent 60%), #0b0c12; --surface: rgba(30,31,44,.55); --surface-2: rgba(40,41,58,.45); --line: rgba(255,255,255,.10); --nav-active: rgba(255,255,255,.12); --th-bg: rgba(255,255,255,.08); --th-ink: #e6e8f0; --glass-border: 1px solid rgba(255,255,255,.12); --glass-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
   }
 }
 :root[data-theme="dark"] {
@@ -48,6 +59,7 @@
   --c1: #e0508a; --c2: #3987e5; --c3: #199e70; --c4: #c98500; --prev: #5f6374;
   --good: #3fcf5f; --good-bg: #12301a; --bad: #ff8a80; --bad-bg: #3a1815; --flat-bg: #262836;
   --tip-bg: #f2f3f7; --tip-ink: #15161d; color-scheme: dark;
+  --mesh: radial-gradient(1000px 600px at 5% -5%, rgba(214,69,122,.28), transparent 60%), radial-gradient(900px 600px at 100% 0%, rgba(63,127,217,.22), transparent 55%), radial-gradient(800px 700px at 60% 120%, rgba(34,168,122,.18), transparent 60%), #0b0c12; --surface: rgba(30,31,44,.55); --surface-2: rgba(40,41,58,.45); --line: rgba(255,255,255,.10); --nav-active: rgba(255,255,255,.12); --th-bg: rgba(255,255,255,.08); --th-ink: #e6e8f0; --glass-border: 1px solid rgba(255,255,255,.12); --glass-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; padding-inline: 0; }
@@ -255,28 +267,28 @@ tfoot td { font-weight: 800; background: var(--accent-soft); border-bottom: 0; }
 
 
 /* --- PDF Export Styles --- */
-.pdf-export { --surface:#ffffff; --surface-2:#f8f9fc; --ink:#15161d; --ink-2:#4a4d5c; --muted:#747889; --line:#e3e5ee; --accent:#c2185b; --accent-ink:#ffffff; --accent-soft:#fce6ef; --c1:#c2185b; --c2:#2a78d6; --c3:#1baf7a; --c4:#eda100; --prev:#a7abb9; --good:#006300; --good-bg:#e3f4e3; --bad:#b3261e; --bad-bg:#fbe5e3; --flat-bg:#eceef4; }
+.pdf-export { --surface:rgba(255,255,255,.72); --mesh:radial-gradient(1200px 700px at 8% -10%, #ffd6e7 0%, transparent 60%), radial-gradient(1000px 600px at 100% 0%, #d4e6ff 0%, transparent 55%), radial-gradient(900px 700px at 60% 110%, #d8f6ea 0%, transparent 60%), #f3f1f8; --surface-2:#f8f9fc; --ink:#15161d; --ink-2:#4a4d5c; --muted:#747889; --line:#e3e5ee; --accent:#c2185b; --accent-ink:#ffffff; --accent-soft:#fce6ef; --c1:#c2185b; --c2:#2a78d6; --c3:#1baf7a; --c4:#eda100; --prev:#a7abb9; --good:#006300; --good-bg:#e3f4e3; --bad:#b3261e; --bad-bg:#fbe5e3; --flat-bg:#eceef4; }
 .m-foot { display: none; }
-.pdf-export { display: block !important; background: #ffffff !important; }
+.pdf-export { display: block !important; background: transparent !important; }
 .pdf-export .side, .pdf-export .side-up, .pdf-export .src, .pdf-export #upPanel, .pdf-export .top .filters { display: none !important; }
-.pdf-export .main { padding: 40px !important; background: #ffffff !important; color: #15161d !important; width: 1280px !important; max-width: 1280px !important; margin: 0 auto; gap: 30px !important; box-sizing: border-box; }
+.pdf-export .main { padding: 40px !important; background: transparent !important; color: #15161d !important; width: 1280px !important; max-width: 1280px !important; margin: 0 auto; gap: 30px !important; box-sizing: border-box; }
 .pdf-export .page { display: flex !important; flex-direction: column; gap: 20px; page-break-inside: avoid; page-break-before: always; margin-top: 0; padding-top: 0; border: none; }
 .pdf-export #p1 { page-break-before: avoid; }
 .pdf-export * { color-scheme: light !important; }
-.pdf-export .card { border: 1px solid #e3e5ee !important; background: #ffffff !important; break-inside: avoid; box-shadow: none !important; margin-bottom: 20px; }
+.pdf-export .card { border: 1px solid rgba(255,255,255,.8) !important; background: rgba(255,255,255,.72) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border-radius: 18px !important; break-inside: avoid; box-shadow: 0 6px 18px rgba(40,44,90,.08) !important; margin-bottom: 20px; }
 .pdf-export .row2, .pdf-export .row3, .pdf-export .rowc { display: flex !important; flex-wrap: nowrap !important; gap: 20px !important; align-items: stretch; page-break-inside: avoid; }
 .pdf-export .row2 > *, .pdf-export .row3 > *, .pdf-export .rowc > * { flex: 1; min-width: 0; }
 .pdf-export .top { margin-bottom: 30px; }
 .pdf-export .hb-t { background: #eceef4 !important; }
-#pdfStage { position: fixed; left: 0; top: 0; width: 1280px; z-index: 9999; background: #ffffff; }
-.pdf-slide { width: 1280px; height: 720px; box-sizing: border-box; padding: 26px 36px; background: #ffffff; color: #15161d; display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+#pdfStage { position: fixed; left: 0; top: 0; width: 1280px; z-index: 9999; background: transparent; }
+.pdf-slide { width: 1280px; height: 720px; box-sizing: border-box; padding: 26px 36px; background: var(--mesh); color: #15161d; display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
 .pdf-slide .pdf-head { border-bottom: 1px solid #e3e5ee; padding-bottom: 8px; }
 .pdf-slide .pdf-head h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: #15161d; }
 .pdf-slide .pdf-head p { margin: 2px 0 0; font-size: 12px; color: #747889; }
 .pdf-slide .pdf-body { flex: 1 1 auto; min-height: 0; transform-origin: top left; margin: 0 !important; padding: 0 !important; }
 .pdf-slide .pdf-body .card { padding: 12px !important; gap: 10px !important; }
 .pdf-slide .pdf-body .find { padding: 12px !important; }
-.pdf-export .find, .pdf-slide .find { box-shadow: none !important; background: #fdeaf1 !important; border: 1px solid #c2185b !important; }
+.pdf-export .find, .pdf-slide .find { box-shadow: none !important; background: rgba(214,69,122,.10) !important; border: 1px solid rgba(214,69,122,.35) !important; border-radius: 18px !important; }
 .pdf-slide .pdf-body { gap: 12px !important; }
 .pdf-slide .pdf-body .hb { gap: 4px !important; }
 .pdf-slide .pdf-body .hb-row { gap: 8px !important; }
@@ -365,26 +377,81 @@ tfoot td { font-weight: 800; background: var(--accent-soft); border-bottom: 0; }
 .pdf-slide .pdf-body:has(> .kpis) .kpi .val { font-size: 20px !important; }
 .pdf-slide .pdf-body .card { margin-bottom: 0 !important; }
 .pdf-slide .dur-tbl th, .pdf-slide .dur-tbl td { padding: 3px 6px !important; }
+/* PDF slide giveaway: tabel dan temuan dipadatkan agar muat dengan ruang di bawah */
+.pdf-slide.pdf-giveaway .pdf-body { gap: 8px !important; }
+.pdf-slide.pdf-giveaway .pdf-body .card { padding: 8px 10px !important; gap: 4px !important; }
+.pdf-slide.pdf-giveaway .pdf-body .card .sub { margin-top: -2px !important; }
+.pdf-slide.pdf-giveaway .pdf-body table { font-size: 10.5px !important; }
+.pdf-slide.pdf-giveaway .pdf-body th, .pdf-slide.pdf-giveaway .pdf-body td { padding: 2px 5px !important; line-height: 1.25 !important; }
+.pdf-slide.pdf-giveaway .pdf-body th { white-space: nowrap !important; }
+.pdf-slide.pdf-giveaway .pdf-body td:first-child { white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+.pdf-slide.pdf-giveaway .pdf-body .find { padding: 8px 10px !important; }
+.pdf-slide.pdf-giveaway .pdf-body .find h3 { font-size: 12px !important; margin-bottom: 4px !important; }
+.pdf-slide.pdf-giveaway .pdf-body .find ul { gap: 2px !important; font-size: 11px !important; line-height: 1.35 !important; }
 /* export PDF lewat dialog cetak: teks vektor, satu slide = satu halaman 16:9 */
 @page { size: 13.333in 7.5in; margin: 0; }
 @media print {
-  html, body, .app { background: #ffffff !important; }
+  html, body, .app { background: transparent !important; }
   body > *:not(.app), .app > *:not(#pdfStage) { display: none !important; }
   .app { overflow: visible !important; height: auto !important; }
   #pdfStage, #pdfStage * { visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  #pdfStage { position: absolute !important; left: 0; top: 0; width: 1280px; background: #ffffff; }
+  #pdfStage { position: absolute !important; left: 0; top: 0; width: 1280px; background: transparent; }
   #pdfStage button, #pdfStage .btn, #pdfStage .status { display: none !important; }
   .pdf-slide { page-break-after: always; break-after: page; }
   .pdf-slide:last-child { page-break-after: auto; break-after: auto; }
 }
+
+/* ===== iOS liquid glass: gradasi lembut, kaca transparan, sudut membulat ===== */
+body { background: var(--mesh); background-attachment: fixed; min-height: 100vh; }
+.side { margin: 12px 0 12px 12px; height: calc(100vh - 24px); border-radius: 28px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: var(--glass-border); box-shadow: var(--glass-shadow); }
+.card, .src, .panel, .pe, .status, .drop { border-radius: 22px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: var(--glass-border); box-shadow: var(--glass-shadow); }
+.panel { border-style: solid; }
+.card.hero { background: linear-gradient(135deg, rgba(214,69,122,.18), rgba(214,69,122,.05)), var(--surface); }
+.card.kpi.cmp { background: var(--surface-2); }
+.drop { background: var(--surface-2); border-style: dashed; }
+.drop.over { background: var(--accent-soft); }
+.nav { gap: 6px; }
+.nav button { border-radius: 16px; }
+.nav button:hover { background: rgba(255,255,255,.35); }
+.nav button[aria-current="page"] { background: var(--nav-active); color: var(--accent); box-shadow: 0 4px 14px rgba(40,44,90,.10); }
+.nav .n { border-radius: 8px; }
+.top h1 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+select, input[type=text], input[type=date] { border-radius: 14px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: var(--glass-border); box-shadow: 0 2px 8px rgba(40,44,90,.06); }
+.btn { border-radius: 999px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: var(--glass-border); box-shadow: 0 4px 12px rgba(40,44,90,.08); }
+.btn.primary { background: linear-gradient(180deg, #e46a94, var(--accent)); border-color: transparent; box-shadow: 0 8px 18px rgba(214,69,122,.32), inset 0 1px 0 rgba(255,255,255,.35); }
+.badge { border-radius: 999px; }
+th { background: var(--th-bg); color: var(--th-ink); }
+@media (max-width: 960px) {
+  .side { margin: 0 12px 12px; height: auto; border-radius: 24px; }
+  .site-head .brand small { display: block !important; }
+}
+@media print {
+  .side, .card, .src, .panel, .status { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+/* header merek: berdiri sendiri di atas, terpisah dari kartu navigasi */
+.site-head { margin: 12px 12px 0; padding: 14px 20px; border-radius: 24px; background: var(--surface); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: var(--glass-border); box-shadow: var(--glass-shadow); }
+.site-head .brand { gap: 12px; }
+.site-head .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
+.site-head .brand b { font-size: 18px; font-weight: 800; letter-spacing: .02em; }
+.site-head .brand small { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+/* header merek polos ala judul besar iOS: tanpa kartu, tanpa ikon */
+.site-head { margin: 16px 16px 0; padding: 0 4px; background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0; }
+.site-head .brand { gap: 0; }
+.site-head .brand-mark { display: none; }
+.site-head .brand b { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.site-head .brand small { font-size: 14px; margin-top: 4px; }
+.site-head + .app { margin-top: 14px; }
+@media (min-width: 961px) { .site-head { margin: 22px 24px 0; } .site-head + .app { margin-top: 14px; } }
 </style>
 
-<div class="app">
-  <aside class="side">
+<header class="site-head">
     <div class="brand">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-7M22 20H2"/></svg></div>
-      <div><b>SOCMED INSIGHT</b><small>Instagram &amp; TikTok</small></div>
+      <div><b>SOCMED INSIGHT</b><small>Dashboard rekap data insight sosial media</small></div>
     </div>
+</header>
+<div class="app">
+  <aside class="side">
     
     <div class="side-up" style="border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:16px 0; margin-bottom:12px;">
       <div class="drop" id="drop" style="padding:16px 12px; font-size:12px; margin-bottom:10px;">
@@ -811,33 +878,6 @@ function commonPrefix(titles) {
   var best = null; Object.keys(m).forEach(function (k) { if (!best || m[k] > m[best]) best = k; });
   return best && m[best] >= 3 ? { text: best, n: m[best] } : null;
 }
-function hourOf(s) { var m = /(\d{1,2}):(\d{2})/.exec(String(s == null ? '' : s)); return m ? (+m[1] + 7) % 24 : null; }
-function medianOf(v) { if (!v.length) return null; var d = v.slice().sort(function (p, q) { return p - q; }), h = d.length >> 1; return d.length % 2 ? d[h] : (d[h - 1] + d[h]) / 2; }
-function reelDur(b) { return (b.org || []).filter(function (x) { return x.type === 'reel' && x.duration != null; }); }
-function durBuckets(rs) {
-  var G = [['≤ 15 detik', function (d) { return d <= 15; }], ['16–30 detik', function (d) { return d > 15 && d <= 30; }], ['> 30 detik', function (d) { return d > 30; }]];
-  return G.map(function (g) { var s = rs.filter(function (x) { return g[1](x.duration); }); var v = sum(s, function (x) { return x.views; }), it = sum(s, inter); return { l: g[0], n: s.length, er: v ? it / v * 100 : null, avgV: s.length ? v / s.length : null }; });
-}
-function durCard(b) {
-  var rs = reelDur(b); if (rs.length < 3) return '';
-  var ds = rs.map(function (x) { return x.duration; }), avg = sum(rs, function (x) { return x.duration; }) / rs.length;
-  var bk = durBuckets(rs).filter(function (g) { return g.n > 0; });
-  return '<div class="card"><h3>Durasi Reel organik</h3><p class="sub">Median ' + dec(medianOf(ds), 0) + ' detik · rata-rata ' + dec(avg, 0) + ' detik · ' + rs.length + ' Reel</p>' +
-    '<div class="tw"><table class="dur-tbl"><thead><tr><th>Durasi</th><th>Reel</th><th>ER</th><th>Tayangan / konten</th></tr></thead><tbody>' +
-    bk.map(function (g) { return '<tr><td>' + g.l + '</td><td>' + g.n + '</td><td>' + (g.er == null ? '–' : pct(g.er, 1)) + '</td><td>' + compact(g.avgV) + '</td></tr>'; }).join('') +
-    '</tbody></table></div><p class="note dur-note">Rentang ' + dec(Math.min.apply(null, ds), 0) + '–' + dec(Math.max.apply(null, ds), 0) + ' detik. Rata-rata bisa terdorong satu video panjang, jadi median dibaca dulu.</p></div>';
-}
-function timeCard(b) {
-  var its = (b.org || []).filter(function (x) { return x.hour != null && x.views > 0; });
-  if (its.length < 6) return '';
-  var SL = [['Dini hari (00–05)', 0, 5], ['Pagi (05–11)', 5, 11], ['Siang (11–15)', 11, 15], ['Sore (15–18)', 15, 18], ['Malam (18–24)', 18, 24]];
-  var rows = SL.map(function (g) { var s = its.filter(function (x) { return x.hour >= g[1] && x.hour < g[2]; }); var v = sum(s, function (x) { return x.views; }), it = sum(s, inter); return { l: g[0], n: s.length, er: v ? it / v * 100 : null, avgV: s.length ? v / s.length : null }; }).filter(function (g) { return g.n > 0; });
-  var best = rows.filter(function (g) { return g.n >= 2; }).sort(function (p, q) { return q.er - p.er; })[0];
-  return '<div class="card"><h3>Waktu posting</h3><p class="sub">ER dan tayangan per jam posting (WIB) · ' + its.length + ' konten organik</p>' +
-    '<div class="tw"><table class="dur-tbl"><thead><tr><th>Jam posting</th><th>Konten</th><th>ER</th><th>Tayangan / konten</th></tr></thead><tbody>' +
-    rows.map(function (g) { return '<tr><td>' + g.l + '</td><td>' + g.n + '</td><td>' + (g.er == null ? '–' : pct(g.er, 1)) + '</td><td>' + compact(g.avgV) + '</td></tr>'; }).join('') +
-    '</tbody></table></div>' + (best ? '<p class="note dur-note">Slot terbaik: ' + best.l + ' dengan ER ' + pct(best.er, 1) + ' (minimal 2 konten).</p>' : '') + '</div>';
-}
 function findings1(b, a) {
   var bt = function (t) { return '<b>' + t + '</b>'; };
   var share = b.totalViews ? b.oViews / b.totalViews * 100 : 0;
@@ -858,8 +898,6 @@ function findings1(b, a) {
   if (org.length) c.push('Tercatat ' + bt(org.length + ' konten organik') + ' dengan rata-rata ' + bt(compact(b.oViews / org.length)) + ' tayangan per konten.');
   if (b.hasPromo) c.push(bt(full(b.pNew) + ' pengikut baru') + ' datang dari ' + b.promo.length + ' konten giveaway dan kuis.');
   if (b.hasPromo && b.er != null && b.erOrg != null && b.er - b.erOrg > 1) c.push('ER seluruh konten ' + pct(b.er) + ' lebih tinggi ' + dec(b.er - b.erOrg, 1) + ' poin dari ER organik karena komentar giveaway. Pakai ER organik sebagai acuan performa konten.');
-  var rsD = reelDur(b);
-  if (rsD.length >= 3) { var bkD = durBuckets(rsD).filter(function (g) { return g.n > 0 && g.er != null; }).sort(function (p, q) { return q.er - p.er; }); c.splice(1, 0, 'Median durasi Reel organik ' + bt(dec(medianOf(rsD.map(function (x) { return x.duration; })), 0) + ' detik') + (bkD.length ? ', ER tertinggi di kelompok ' + bt(bkD[0].l) + ' (' + pct(bkD[0].er, 1) + ').' : '.')); }
   return c.slice(0, 5);
 }
 function findings2(b, a) {
@@ -910,8 +948,6 @@ function buildRecs(b, a) {
   if (b.hasPromo && b.er != null && b.erOrg != null && b.er - b.erOrg > 1) r.push({ pri: 'lo', t: 'Jadikan ER organik angka utama laporan', d: 'ER seluruh konten (' + pct(b.er) + ') terdorong komentar giveaway. ER organik (' + pct(b.erOrg) + ') lebih jujur untuk menilai kualitas konten dan target bulan depan.', w: 'Dasar: halaman 1 dan 2.' });
   if (a && a.a.nonFollowerPct != null && b.a.nonFollowerPct != null && b.a.nonFollowerPct > a.a.nonFollowerPct) r.push({ pri: 'lo', t: 'Pertahankan jangkauan non-pengikut', d: 'Porsi tayangan non-pengikut naik ke ' + pct(b.a.nonFollowerPct) + '. Pantau apakah porsi ini bertahan setelah periode giveaway berakhir.', w: 'Dasar: halaman 2, sumber tayangan.' });
   var org = b.org, extra = [];
-  var bkR = durBuckets(reelDur(b)).filter(function (g) { return g.n >= 2 && g.er != null; }).sort(function (p, q) { return q.er - p.er; });
-  if (bkR.length > 1 && bkR[0].er - bkR[bkR.length - 1].er >= 1) extra.push({ pri: 'hi', t: 'Atur durasi Reel ke ' + bkR[0].l, d: 'Reel ' + bkR[0].l + ' punya ER ' + pct(bkR[0].er, 1) + ', sedangkan ' + bkR[bkR.length - 1].l + ' hanya ' + pct(bkR[bkR.length - 1].er, 1) + '. Prioritaskan durasi di kelompok pertama untuk Reel berikutnya.', w: 'Dasar: halaman 1, durasi Reel organik.' });
   if (b.types.reel.er != null && b.types.postingan.er != null) {
     var rv = b.types.reel.er, pv = b.types.postingan.er;
     extra.push(rv > pv ? { pri: 'md', t: 'Perbanyak format Reel', d: 'ER Reel ' + pct(rv) + ' lebih tinggi dari Postingan (' + pct(pv) + '). Ubah sebagian Carousel dan Gambar menjadi Reel, lalu pantau ER-nya dua minggu.', w: 'Dasar: halaman 2, ER per jenis konten.' } : { pri: 'md', t: 'Perkuat format Postingan', d: 'ER Postingan ' + pct(pv) + ' lebih tinggi dari Reel (' + pct(rv) + '). Pertahankan Carousel yang sudah bekerja dan perbanyak variasi slide.', w: 'Dasar: halaman 2, ER per jenis konten.' });
@@ -956,8 +992,7 @@ function render1(b, a) {
   var dates = {}; b.cs.forEach(function (c) { if (c.date && c.views) { dates[c.date] = (dates[c.date] || 0) + c.views; } });
   var dk = Object.keys(dates).sort(); var trend = '';
   if (dk.length >= 3) trend = '<div class="card"><h3>Tren tayangan harian</h3><p class="sub">Dari data konten bertanggal</p><div class="trend" data-pts="' + esc(JSON.stringify(dk.map(function (k) { return { x: k.slice(5), y: dates[k] }; }))) + '"></div></div>';
-  var dC = durCard(b), tC = timeCard(b);
-  el.innerHTML = kp + '<div class="row2">' + topCard + findingsCard(S.ai ? S.ai.p1 : findings1(b, a)) + '</div>' + trend + '<div class="rowc">' + d1 + d3 + '</div>' + (dC || tC ? '<div class="rowc">' + dC + tC + '</div>' : '');
+  el.innerHTML = kp + '<div class="row2">' + topCard + findingsCard(S.ai ? S.ai.p1 : findings1(b, a)) + '</div>' + trend + '<div class="rowc">' + d1 + d3 + '</div>';
   drawTrends();
 }
 function drawTrends() {
@@ -978,8 +1013,7 @@ function render2(b, a) {
     ['Pengikut bersih*', L.a.netFollowers != null ? L.a.netFollowers : gL, R.a.netFollowers != null ? R.a.netFollowers : gR, function (v) { return v == null ? '–' : signed(v, full); }, false, false, true],
     ['Pengikut baru (follows)', L.a.follows != null ? L.a.follows : gL, R.a.follows != null ? R.a.follows : gR, full, false, false],
     ['Views postingan', L.types.postingan.views, R.types.postingan.views, compact, false, false],
-    ['Views reel', L.types.reel.views, R.types.reel.views, compact, false, false],
-    ['Durasi Reel median (organik)', medianOf(reelDur(L).map(function (x) { return x.duration; })), medianOf(reelDur(R).map(function (x) { return x.duration; })), function (v) { return dec(v, 0) + ' detik'; }, false, false]
+    ['Views reel', L.types.reel.views, R.types.reel.views, compact, false, false]
   ];
   var tbl = '<div class="card"><h3>Komparasi metrik</h3><p class="sub">Selisih = ' + esc(R.p.short || R.p.label) + ' dibanding ' + esc(L.p.short || L.p.label) + ' (periode aktif)</p><div class="tw"><table><thead><tr><th>Metrik</th><th>' + esc(L.p.short || L.p.label) + '</th><th>' + esc(R.p.short || R.p.label) + '</th><th>Selisih</th></tr></thead><tbody>' + rows.map(function (r) {
     var d = r[6] ? (r[1] != null && r[2] != null ? { v: r[1] - r[2], txt: signed(r[1] - r[2], full) } : null) : delta(r[1], r[2], r[4]);
@@ -1376,7 +1410,6 @@ var COL = {
   saves: /^(simpan|saves|save|disimpan|frekuensidisimpan)$/,
   newFollowers: /^(pengikutbaru|followersbaru|newfollowers|followbaru|follows|newfollower|mengikuti)$/,
   reach: /^(jangkauan|reach)$/,
-  duration: /^(durasi|durasidetik|duration|durationseconds)$/,
   url: /^(url|link|tautan|tautanpermanen|permalink|linkkonten|tautankonten|urlkonten)$/
 };var ACCX = {
   audience: /^(audience|jangkauan|reach|penonton|pemirsa|audienceakun)$/,
@@ -1411,7 +1444,7 @@ function capLink(c, n) {
   return c.url ? '<a class="clink" href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer" title="Buka konten di Instagram">' + t + '<span aria-hidden="true" style="margin-left:4px">↗</span></a>' : t;
 }
 function safeUrl(u) { u = String(u == null ? '' : u).trim(); return /^https?:\/\//i.test(u) ? u : ''; }
-function stripItem(i) { return { title: cap(i.title), full: i.full || i.title, url: safeUrl(i.url) || null, date: i.date || null, platform: i.platform || null, type: i.type || null, category: i.category || 'organic', views: i.views || 0, likes: i.likes, comments: i.comments, reposts: i.reposts, shares: i.shares, saves: i.saves, newFollowers: i.newFollowers, reach: i.reach, duration: i.duration, hour: i.hour }; }
+function stripItem(i) { return { title: cap(i.title), full: i.full || i.title, url: safeUrl(i.url) || null, date: i.date || null, platform: i.platform || null, type: i.type || null, category: i.category || 'organic', views: i.views || 0, likes: i.likes, comments: i.comments, reposts: i.reposts, shares: i.shares, saves: i.saves, newFollowers: i.newFollowers, reach: i.reach }; }
 var uid = 0;
 function mkPeriod(label, items) {
   var ds = items.map(function (i) { return i.date; }).filter(Boolean).sort();
@@ -1447,7 +1480,7 @@ function tableToData(rows, fname) {
     }
     var cat = g('kategori') != null && String(g('kategori')).trim() ? normCat(g('kategori')) : normCat(title);
     return { periodLabel: String(g('periode') || '').trim(), date: parseDate(g('tanggal')), title: title, platform: g('platform') ? String(g('platform')).trim() : null, type: normType(g('jenis')), category: cat,
-      views: num(g('views')) || 0, likes: num(g('likes')), comments: num(g('comments')), reposts: num(g('reposts')), shares: num(g('shares')), saves: num(g('saves')), newFollowers: num(g('newFollowers')), reach: num(g('reach')), duration: num(g('duration')), hour: hourOf(g('tanggal')), url: g('url') };
+      views: num(g('views')) || 0, likes: num(g('likes')), comments: num(g('comments')), reposts: num(g('reposts')), shares: num(g('shares')), saves: num(g('saves')), newFollowers: num(g('newFollowers')), reach: num(g('reach')), url: g('url') };
   }).filter(Boolean);
   if (!items.length) throw new Error('Tidak ada baris konten yang terbaca.');
   var out = { periods: [], rows: [], warn: '' }, byLab = {}, skipped = 0, undated = 0, accBy = {};
@@ -1839,7 +1872,7 @@ if($('#pdfConfirm')) $('#pdfConfirm').addEventListener('click', async function (
       { p: 2, title: 'Komparasi metrik', pick: function (ch) { return ch.filter(hasCls('row2')); } },
       { p: 2, title: 'Komparasi periode · ER & proporsi', pick: function (ch) { return ch.filter(hasCls('rowc')); } },
       { p: 3, title: 'Top Performance', pick: function (ch) { return ch; } },
-      { p: 4, title: 'Giveaway, game, dan kuis', pick: function (ch) { return ch.slice(0, 2); } },
+      { p: 4, title: 'Giveaway, game, dan kuis', cls: 'pdf-giveaway', pick: function (ch) { return ch.slice(0, 2); } },
       { p: 4, title: 'Giveaway, game, dan kuis · grafik', cls: 'pdf-grafik', pick: function (ch) { return ch.slice(2); } },
       { p: 5, title: 'Rekomendasi', pick: function (ch) { return ch; } }
     ];
@@ -1902,3 +1935,5 @@ if (window.claude && window.claude.use) {
 })();
 </script>
 
+
+</body></html>
